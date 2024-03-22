@@ -26,7 +26,7 @@ def code_parser(filename):
             if opcode not in OPCODES:
                 raise ValueError(f'Invalid opcode: {opcode}')
             opcode = OPCODES[opcode]
-            rs1, rs2, rd, imm = 0, 0, 0, None  # Set imm to None by default
+            rs1, rs2, rd, imm = None, None, None, None  # Set imm to None by default
             unit, rs1_type, rs2_type, rd_type = None, None, None, None
             if opcode == 0:  # fld format: "instruction rd imm(rs1)"
                 rd = fields[1]
@@ -56,11 +56,11 @@ def code_parser(filename):
                     rs2 = 0
                     rs2_type = None       
                 if opcode == 2 or opcode == 3:
-                    unit = FUNITS[3]
+                    unit = FUNITS[2] #ADD
                 elif opcode == 4:
-                    unit = FUNITS[2]
+                    unit = FUNITS[1] #MULT
                 else:
-                    unit = FUNITS[3]
+                    unit = FUNITS[3] #DIV
             instructions.append({
                 'opcode': opcode,
                 'rs1': rs1,
@@ -74,6 +74,7 @@ def code_parser(filename):
             })
     return instructions
 
+#print(code_parser("../exemaples/example.s"))
 
 def funit_parser(filename):
     funits = {}
