@@ -1,7 +1,6 @@
-from parsers import OPCODES
+from src.parsers import OPCODES
 
 table_printer = {}
-#'''
 
 def update_create_a_iten(instruc, cls):
     if not(instruc):

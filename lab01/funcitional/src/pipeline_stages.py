@@ -1,4 +1,4 @@
-from parsers import *
+from src.parsers import *
 
 _UNT_TYPE = 0 
 _AV = 1

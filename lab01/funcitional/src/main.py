@@ -1,6 +1,6 @@
-from pipeline_stages import *
-from parsers import *
-from printer import *
+from src.parsers import *
+from src.printer import *
+from src.pipeline_stages import *
 import sys
 
 def _exct_pipln_multfunit_stage(to_move: list, to_process: list, action):
