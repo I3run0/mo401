@@ -60,10 +60,6 @@ def issue(instruc) -> bool:
     #change tbl
     tbl_pos = units[instruc['unit']]['unt_avaibles'].pop(0)
     funits_states[tbl_pos][AV] = False
-    
-    if not (instruc['opcode'] == OPCODES['fsd']):
-        funits_states[tbl_pos][RD] = instruc['rd']
-        REG[instruc['rd'][:1]][instruc['rd']] = funits_states[tbl_pos][UNT_TYPE]
 
     funits_states[tbl_pos][F1] = instruc["rs1"]
     unit_from_reg_src = REG[instruc['rs1'][:1]][instruc['rs1']]
@@ -76,6 +72,10 @@ def issue(instruc) -> bool:
         funits_states[tbl_pos][Q2] = unit_from_reg_src 
         funits_states[tbl_pos][R2] =  False if unit_from_reg_src else True
 
+    if not (instruc['opcode'] == OPCODES['fsd']):
+        funits_states[tbl_pos][RD] = instruc['rd']
+        REG[instruc['rd'][:1]][instruc['rd']] = tbl_pos
+
     instruc["status"] = ISSUED
     instruc["unit_addr"] = tbl_pos
     return True
@@ -84,16 +84,17 @@ def read(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
     #print(funits_states[tbl_pos])
     ri_is_av, rj_is_av = False, False
+
     if funits_states[tbl_pos][Q1] == None:
         ri_is_av = True
-    else: 
-        ri_is_av = not(REG[instruc['rs1'][:1]][instruc['rs1']])
-    
+    else:
+        ri_is_av = REG[instruc['rs1'][:1]][instruc['rs1']] != funits_states[tbl_pos][Q1]
+
     if funits_states[tbl_pos][Q2] == None:
         rj_is_av = True
     else:
         rj_is_av = True if instruc['opcode'] == OPCODES['fld'] \
-            else True if not(REG[instruc['rs2'][:1]][instruc['rs2']]) else False
+            else True if REG[instruc['rs2'][:1]][instruc['rs2']] != funits_states[tbl_pos][Q2] else False
 
     #Register src 1 is not used by a unit
     if ri_is_av:
