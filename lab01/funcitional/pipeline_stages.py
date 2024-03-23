@@ -37,16 +37,12 @@ def init_funit_status_table(funits: dict):
             _FUNIT_INF[ukey]['unt_avaibles'].append(tbl_ind)
             tbl_ind += 1
 
-    print(_FUNIT_INF)
-
 def issue(instruc) -> bool:
     #check reg table
     if not (instruc['opcode'] == OPCODES['fsd']) and\
           _REG[instruc['rd'][:1]][instruc['rd']]:
-        print("chegou aqui")
         return False
 
-    print(_FUNIT_INF)
     if _FUNIT_INF[instruc['unit']]['unt_avaibles'] == []:
         return False
 
@@ -74,7 +70,6 @@ def issue(instruc) -> bool:
 
 def read(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
-    #print(_FUNITS_STATUS_TBL[tbl_pos])
     ri_is_av, rj_is_av = False, False
     ri_is_av = not(_FUNITS_STATUS_TBL[tbl_pos][_Q1]) or\
           _REG[instruc['rs1'][:1]][instruc['rs1']] != _FUNITS_STATUS_TBL[tbl_pos][_Q1]
