@@ -3,6 +3,17 @@ from pipeline_stages import *
 from parsers import *
 from printer import *
 
+def exct_pipln_multfunit_stage(to_move: list, to_process: list, action):
+    for instruc in to_process:
+        if action(instruc):
+            to_move.append(instruc)
+
+def transfer_process_queue(totransfer: list, src_queue: list, tgt_queue: list):
+    while totransfer != []:
+        item = totransfer.pop(0)
+        src_queue.remove(item)
+        tgt_queue.append(item)
+
 def main():
     init_queue = instructions
     processing_queue = [[], [], [], []]
@@ -20,19 +31,12 @@ def main():
             instruc_to_issue = init_queue.pop(0) 
 
         issue_to_move = []
-        for ind in range(len(processing_queue[0])):
-            if read(processing_queue[0][ind]):
-                issue_to_move.append(processing_queue[0][ind])
-
         exec_to_move = []
-        for ind in range(len(processing_queue[1])):
-            if execute(processing_queue[1][ind]):
-                exec_to_move.append(processing_queue[1][ind])
-        
         write_to_move = []
-        for ind in range(len(processing_queue[2])):
-            if write(processing_queue[2][ind]):
-                write_to_move.append(processing_queue[2][ind])
+        
+        exct_pipln_multfunit_stage(issue_to_move, processing_queue[0], read)
+        exct_pipln_multfunit_stage(exec_to_move, processing_queue[1], execute)
+        exct_pipln_multfunit_stage(write_to_move, processing_queue[2],  write)
 
         update_create_a_iten(instruc_to_issue, cls)
         update_create_a_list(processing_queue[0], cls)
@@ -44,20 +48,9 @@ def main():
         if instruc_to_issue:
             processing_queue[0].append(instruc_to_issue)
 
-        while issue_to_move != []:
-            item = issue_to_move.pop(0)
-            processing_queue[0].remove(item)
-            processing_queue[1].append(item)
-
-        while exec_to_move != []:
-            item = exec_to_move.pop(0)
-            processing_queue[1].remove(item)
-            processing_queue[2].append(item)
-
-        while write_to_move != []:
-            item = write_to_move.pop(0)
-            processing_queue[2].remove(item)
-            end_queue.append(item)
+        transfer_process_queue(issue_to_move, processing_queue[0], processing_queue[1])
+        transfer_process_queue(exec_to_move, processing_queue[1], processing_queue[2])
+        transfer_process_queue(write_to_move, processing_queue[2], end_queue)
 
         cls += 1
 
