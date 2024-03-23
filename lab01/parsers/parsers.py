@@ -11,7 +11,8 @@ OPCODES = {
 # Define register prefix constants
 REG_PREFIXES = {
     'x': 'int',
-    'f': 'float'
+    'f': 'float',
+    'r': 'int'
 }
 
 # Define fucntion units type constants
@@ -21,8 +22,8 @@ def code_parser(filename):
     instructions = []
     with open(filename, 'r') as f:
         for line in f:
-            fields = line.strip().replace(',', ' ').split()
-            opcode = fields[0].lower()
+            fields = line.lower().strip().replace(',', ' ').split()
+            opcode = fields[0]
             if opcode not in OPCODES:
                 raise ValueError(f'Invalid opcode: {opcode}')
             opcode = OPCODES[opcode]
@@ -63,6 +64,7 @@ def code_parser(filename):
                     unit = FUNITS[3] #DIV
             instructions.append({
                 'opcode': opcode,
+                'op': fields[0],
                 'rs1': rs1,
                 'rs1_type': rs1_type,
                 'rs2': rs2,

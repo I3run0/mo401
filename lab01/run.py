@@ -23,26 +23,24 @@ CLS = 9
 
 #Tuple list that indicates the range of it unit type
 funits_states = []
-tbl_sz = 0
-
+tbl_ind = 0
 for ukey in units:
-    init_tbl_sz = tbl_sz
+    units[ukey]['unt_avaibles'] = []
     for j in range(units[ukey]['qtt']):
         funits_states.append([None] * 10)
-        funits_states[tbl_sz][UNT_TYPE] = ukey
-        funits_states[tbl_sz][CLS] = units[ukey]['cls']
-        tbl_sz += 1   
-    units[ukey]['range'] = [init_tbl_sz, init_tbl_sz ,tbl_sz]
-    units[ukey]['avaible'] = True
+        funits_states[tbl_ind][UNT_TYPE] = ukey
+        funits_states[tbl_ind][CLS] = units[ukey]['cls']
+        units[ukey]['unt_avaibles'].append(tbl_ind)
+        tbl_ind += 1
+
 
 
 #extend the intructions dictionary
 UNISSU = 0
-ISSUED = 1
-READ = 2
-EXECUTED = 3
-WRITED = 4
-DONE = 5
+ISSUED = "ISSUE"
+READ = "READ"
+EXECUTION = "EXECUTE"
+WRITE = "WRITE"
 
 for instruc in instructions:
     instruc["status"] = UNISSU
@@ -65,13 +63,16 @@ def issue(instruc) -> bool:
     #check reg table
     if not (instruc['opcode'] == OPCODES['fsd']) and\
           REG[instruc['rd'][:1]][instruc['rd']]:
+        print("chegou aqui")
         return False
     
-    if not units[instruc['unit']]['avaible']:
+    print("units")
+    print(units[instruc['unit']]['unt_avaibles'])
+    if units[instruc['unit']]['unt_avaibles'] == []:
         return False
 
     #change tbl
-    tbl_pos = units[instruc['unit']]['range'][1]
+    tbl_pos = units[instruc['unit']]['unt_avaibles'].pop(0)
     funits_states[tbl_pos][AV] = False
     
     if not (instruc['opcode'] == OPCODES['fsd']):
@@ -88,20 +89,17 @@ def issue(instruc) -> bool:
         unit_from_reg_src = REG[instruc['rs2'][:1]][instruc['rs2']]
         funits_states[tbl_pos][Q2] = unit_from_reg_src 
         funits_states[tbl_pos][R2] =  False if unit_from_reg_src else True
-    
-    units[instruc['unit']]['range'][1] += 1
-    if units[instruc['unit']]['range'][1] == units[instruc['unit']]['range'][2]:
-        units[instruc['unit']]['avaible'] = False
 
     instruc["status"] = ISSUED
     instruc["unit_addr"] = tbl_pos
     return True
 
-def read(instruc):
+def read(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
+    #print(funits_states[tbl_pos])
     ri_is_av = not(REG[instruc['rs1'][:1]][instruc['rs1']])
-    rj_is_av = not(instruc['opcode'] == OPCODES['fld']) and\
-          REG[instruc['rs2'][:1]][instruc['rs2']]
+    rj_is_av = True if instruc['opcode'] == OPCODES['fld'] \
+        else True if not(REG[instruc['rs2'][:1]][instruc['rs2']]) else False
     
     #Register src 1 is not used by a unit
     if ri_is_av:
@@ -115,102 +113,124 @@ def read(instruc):
     
     if rj_is_av and ri_is_av:
         instruc["status"] = READ
+        return True
 
-def execute(instruc):
+    return False
+
+def execute(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
     funits_states[tbl_pos][CLS] -= 1
+    if instruc["status"] != EXECUTION:
+        instruc["status"] = EXECUTION
+
     if funits_states[tbl_pos][CLS] == 0:
-        if not(instruc['opcode'] == OPCODES['fsd']):
-            REG[instruc['rd'][:1]][instruc['rd']] = None
-        
-        un_type = funits_states[tbl_pos][UNT_TYPE] 
-        funits_states[tbl_pos][CLS] = units[un_type]['range'][0]
-        funits_states[tbl_pos][Q1] = None
-        funits_states[tbl_pos][Q2] = None
-        funits_states[tbl_pos][R1] = None
-        funits_states[tbl_pos][R2] = None
-        funits_states[tbl_pos][F1] = None
-        funits_states[tbl_pos][F2] = None
-        funits_states[tbl_pos][RD] = None
-        funits_states[tbl_pos][AV] = True
+        return True
 
-        instruc["status"] = WRITED
+    return False
 
-#para lançar a issue verificar se alguém está escrevendo no registrador
 
-'''
-def issue_func(insruc):
-    if check_table(instruc)
-
-while init_queue:
-    issue_func()
-
-ex_cls = 1
-while init_queue == [] and processing_queue = []:
-
-    #ISSUE 
-    ind_to_move = []
-    for ind in range(len(processing_queue[0])):
-        execute(processing_queue[0][ind])
-        if processing_queue[0][ind]["status"] == READ:
-            ind_to_move.append(ind)
-
-    while ind_to_move != []:
-        end_queue.append(processing_queue[3].pop(ind_to_move.pop(0)))
+def write(instruc) -> bool:
+    tbl_pos = instruc["unit_addr"]
+    if not(instruc['opcode'] == OPCODES['fsd']):
+        REG[instruc['rd'][:1]][instruc['rd']] = None
     
-    #READ 
-    ind_to_move = []
-    for ind in range(len(processing_queue[2])):
-        execute(processing_queue[2][ind])
-        if processing_queue[2][ind]["status"] == READ:
-            ind_to_move.append(ind)
-    
-    while ind_to_move != []:
-        end_queue.append(processing_queue[3].pop(ind_to_move.pop(0)))
+    un_type = funits_states[tbl_pos][UNT_TYPE] 
+    funits_states[tbl_pos][CLS] = units[un_type]['cls']
+    funits_states[tbl_pos][Q1] = None
+    funits_states[tbl_pos][Q2] = None
+    funits_states[tbl_pos][R1] = None
+    funits_states[tbl_pos][R2] = None
+    funits_states[tbl_pos][F1] = None
+    funits_states[tbl_pos][F2] = None
+    funits_states[tbl_pos][RD] = None
+    funits_states[tbl_pos][AV] = True
+    units[un_type]['unt_avaibles'].append(tbl_pos) 
+    instruc["status"] = WRITE
+    return True
 
-    #execute the ex_cls
-    ind_to_move = []
-    for ind in range(len(processing_queue[3])):
-        execute(processing_queue[3][ind])
-        if processing_queue[3][ind]["status"] == WRITED:
-            ind_to_move.append(ind)
-    
-    while ind_to_move != []:
-        end_queue.append(processing_queue[3].pop(ind_to_move.pop(0)))
-    
-    if issue_func(init_queue[0]):
-        processing_queue.append(init_queue.pop(0)) # [a1, a2, a3] <- [a6, A5] | [a1, a2, a3, a6] <- [A5]
+#printers key is a instruc and the value is its status
+#
+table_printer = {}
+#'''
 
+def update_create_a_iten(instruc, cls):
+    if not(instruc):
+        return
     
-''' 
-#print(issue(instructions[4]))
-#execute(instructions[4])
+    key = ""
+    if instruc['opcode'] == OPCODES['fld']:
+        key = f'{instruc["op"]} {instruc["rd"]} {instruc["imm"]}({instruc["rs1"]})'
+
+    elif instruc["opcode"] == OPCODES["fsd"]:
+        key = f'{instruc["op"]} {instruc["rs1"]} {instruc["imm"]}({instruc["rs2"]})'
+    
+    else:
+        key = f'{instruc["op"]} {instruc["rd"]} {instruc["rs1"]} {instruc["rs2"]}'
+    
+    if not(key in table_printer.keys()):
+        table_printer[key] = {
+            "ISSUE": 0,
+            "READ": 0,
+            "EXECUTE": 0,
+            "WRITE": 0,
+        }
+
+    if instruc["status"] in table_printer[key].keys():
+        table_printer[key][instruc["status"]] = cls
+    else:
+        print(instruc["status"])
+
+def update_create_a_list(indices ,instrucs, cls):
+    for ind in indices:
+        update_create_a_iten(instrucs[ind], cls)
 
 #'''
 cls = 1
-while init_queue != [] and cls < 20:    
-    
-    
-    #READ 
-    ind_to_move = []
+
+while cls < 26:
+    print(cls)
+    instruc_to_issue = None
+
+    if init_queue != [] and issue(init_queue[0]):
+        instruc_to_issue = init_queue.pop(0) 
+
+    issue_to_move = []
     for ind in range(len(processing_queue[0])):
         read(processing_queue[0][ind])
         if processing_queue[0][ind]["status"] == READ:
-            ind_to_move.append(ind)
-    
-    while ind_to_move != []:
-        processing_queue[1].append(processing_queue[0].pop(ind_to_move.pop(0)))
-    
-    if issue(init_queue[0]):
-        processing_queue[0].append(init_queue.pop(0))
+            issue_to_move.append(ind)
 
-    print(cls)
-    print(processing_queue[0])
-    print(init_queue)
-    print(len(processing_queue))
-    print()
+    exec_to_move = []
+    for ind in range(len(processing_queue[1])):
+        if execute(processing_queue[1][ind]):
+            exec_to_move.append(ind)
+    
+    write_to_move = []
+    for ind in range(len(processing_queue[2])):
+        if write(processing_queue[2][ind]):
+            write_to_move.append(ind)
+
+    update_create_a_iten(instruc_to_issue, cls)
+    update_create_a_list(issue_to_move, processing_queue[0], cls)
+    update_create_a_list(exec_to_move, processing_queue[1], cls)
+    update_create_a_list(write_to_move, processing_queue[2], cls)
+
+    print(table_printer)
+    #print(instructions)
+    print(issue_to_move)
+    if instruc_to_issue:
+        processing_queue[0].append(instruc_to_issue)
+
+    while issue_to_move != []:
+        processing_queue[1].append(processing_queue[0].pop(issue_to_move.pop(0)))
+
+    while exec_to_move != []:
+        processing_queue[2].append(processing_queue[1].pop(exec_to_move.pop(0)))
+
+    while write_to_move != []:
+        end_queue.append(processing_queue[2].pop(write_to_move.pop(0)))
+
     cls += 1
-#'''
-
+    print(processing_queue[0] != [] or processing_queue[1] != [] or processing_queue[2] != [])
     
 
