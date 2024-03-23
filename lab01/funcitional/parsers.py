@@ -73,6 +73,8 @@ def code_parser(filename):
                 'rd_type': rd_type,
                 'imm': imm,
                 'unit': unit,
+                'status': None,
+                'unit_addr': None,
             })
     return instructions
 

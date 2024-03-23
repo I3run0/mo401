@@ -1,7 +1,7 @@
-import logging as lgg
 from pipeline_stages import *
 from parsers import *
 from printer import *
+import sys
 
 def exct_pipln_multfunit_stage(to_move: list, to_process: list, action):
     for instruc in to_process:
@@ -15,16 +15,22 @@ def transfer_process_queue(totransfer: list, src_queue: list, tgt_queue: list):
         tgt_queue.append(item)
 
 def main():
+    if len(sys.argv) < 3:
+        sys.exit("Paramenter are missing")
+
+    units = funit_parser(sys.argv[1])
+    instructions = code_parser(sys.argv[2])
+
     init_queue = instructions
     processing_queue = [[], [], [], []]
     end_queue = []
 
-    cls = 1
+    init_funit_status_table(units)
+    update_create_a_list(init_queue, 0)
 
+    cls = 1
     while cls < 40 and (init_queue != [] or processing_queue[0] != [] or\
         processing_queue[1] != [] or processing_queue[2] != []):
-
-        print(cls)
         instruc_to_issue = None
 
         if init_queue != [] and issue(init_queue[0]):
@@ -33,7 +39,7 @@ def main():
         issue_to_move = []
         exec_to_move = []
         write_to_move = []
-        
+
         exct_pipln_multfunit_stage(issue_to_move, processing_queue[0], read)
         exct_pipln_multfunit_stage(exec_to_move, processing_queue[1], execute)
         exct_pipln_multfunit_stage(write_to_move, processing_queue[2],  write)
@@ -43,6 +49,7 @@ def main():
         update_create_a_list(processing_queue[1], cls)
         update_create_a_list(processing_queue[2], cls)
 
+        print(f'cls: {cls}')
         print_table( )
 
         if instruc_to_issue:

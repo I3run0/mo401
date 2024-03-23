@@ -1,143 +1,129 @@
 from parsers import *
 
+_UNT_TYPE = 0 
+_AV = 1
+_RD = 2
+_F1 = 3
+_F2 = 4
+_Q1 = 5
+_Q2 = 6
+_R1 = 7
+_R2 = 8
+_CLS = 9
 
-units = funit_parser("exemaples/example.txt")
-instructions = code_parser("exemaples/example.s")
+_INT_REG = dict.fromkeys(['r' + str(i) for i in range(1, 33)])
+_FLOAT_REG = dict.fromkeys(['f' + str(i) for i in range(1, 33)])
+_X_REG = dict.fromkeys(['x' + str(i) for i in range(1, 33)])
+_REG = {'r': _INT_REG, 'f': _FLOAT_REG, 'x':_X_REG}
 
-UNT_TYPE = 0 
-AV = 1
-RD = 2
-F1 = 3
-F2 = 4
-Q1 = 5
-Q2 = 6
-R1 = 7
-R2 = 8
-CLS = 9
+_ISSUED = "ISSUE"
+_READ = "READ"
+_EXECUTION = "EXECUTE"
+_WRITE = "WRITE"
 
-INT_REG = dict.fromkeys(['r' + str(i) for i in range(1, 33)])
-FLOAT_REG = dict.fromkeys(['f' + str(i) for i in range(1, 33)])
-X_REG = dict.fromkeys(['x' + str(i) for i in range(1, 33)])
-REG = {'r': INT_REG, 'f': FLOAT_REG, 'x':X_REG}
+_FUNIT_INF = {}
+_FUNITS_STATUS_TBL = []
 
-UNISSU = 0
-ISSUED = "ISSUE"
-READ = "READ"
-EXECUTION = "EXECUTE"
-WRITE = "WRITE"
+def init_funit_status_table(funits: dict):
+    global _FUNIT_INF
+    _FUNIT_INF = funits.copy()
+    tbl_ind = 0
+    for ukey in _FUNIT_INF:
+        _FUNIT_INF[ukey]['unt_avaibles'] = []
+        for j in range(_FUNIT_INF[ukey]['qtt']):
+            _FUNITS_STATUS_TBL.append([None] * 10)
+            _FUNITS_STATUS_TBL[tbl_ind][_UNT_TYPE] = ukey
+            _FUNITS_STATUS_TBL[tbl_ind][_CLS] = _FUNIT_INF[ukey]['cls']
+            _FUNIT_INF[ukey]['unt_avaibles'].append(tbl_ind)
+            tbl_ind += 1
 
-for instruc in instructions:
-    instruc["status"] = UNISSU
-    instruc["unit_addr"] = None
-
-
-#Tuple list that indicates the range of it unit type
-funits_states = []
-tbl_ind = 0
-for ukey in units:
-    units[ukey]['unt_avaibles'] = []
-    for j in range(units[ukey]['qtt']):
-        funits_states.append([None] * 10)
-        funits_states[tbl_ind][UNT_TYPE] = ukey
-        funits_states[tbl_ind][CLS] = units[ukey]['cls']
-        units[ukey]['unt_avaibles'].append(tbl_ind)
-        tbl_ind += 1
-
-
+    print(_FUNIT_INF)
 
 def issue(instruc) -> bool:
     #check reg table
     if not (instruc['opcode'] == OPCODES['fsd']) and\
-          REG[instruc['rd'][:1]][instruc['rd']]:
+          _REG[instruc['rd'][:1]][instruc['rd']]:
         print("chegou aqui")
         return False
-    
-    #print("units")
-    #print(units[instruc['unit']]['unt_avaibles'])
-    if units[instruc['unit']]['unt_avaibles'] == []:
+
+    print(_FUNIT_INF)
+    if _FUNIT_INF[instruc['unit']]['unt_avaibles'] == []:
         return False
 
-    #change tbl
-    tbl_pos = units[instruc['unit']]['unt_avaibles'].pop(0)
-    funits_states[tbl_pos][AV] = False
+    tbl_pos = _FUNIT_INF[instruc['unit']]['unt_avaibles'].pop(0)
+    _FUNITS_STATUS_TBL[tbl_pos][_AV] = False
 
-    funits_states[tbl_pos][F1] = instruc["rs1"]
-    unit_from_reg_src = REG[instruc['rs1'][:1]][instruc['rs1']]
-    funits_states[tbl_pos][Q1] = unit_from_reg_src 
-    funits_states[tbl_pos][R1] =  False if unit_from_reg_src else True
+    _FUNITS_STATUS_TBL[tbl_pos][_F1] = instruc["rs1"]
+    unit_from_reg_src = _REG[instruc['rs1'][:1]][instruc['rs1']]
+    _FUNITS_STATUS_TBL[tbl_pos][_Q1] = unit_from_reg_src 
+    _FUNITS_STATUS_TBL[tbl_pos][_R1] =  False if unit_from_reg_src else True
 
     if not(instruc['opcode'] == OPCODES['fld']):
-        funits_states[tbl_pos][F2] = instruc["rs2"]
-        unit_from_reg_src = REG[instruc['rs2'][:1]][instruc['rs2']]
-        funits_states[tbl_pos][Q2] = unit_from_reg_src 
-        funits_states[tbl_pos][R2] =  False if unit_from_reg_src else True
+        _FUNITS_STATUS_TBL[tbl_pos][_F2] = instruc["rs2"]
+        unit_from_reg_src = _REG[instruc['rs2'][:1]][instruc['rs2']]
+        _FUNITS_STATUS_TBL[tbl_pos][_Q2] = unit_from_reg_src 
+        _FUNITS_STATUS_TBL[tbl_pos][_R2] =  False if unit_from_reg_src else True
 
     if not (instruc['opcode'] == OPCODES['fsd']):
-        funits_states[tbl_pos][RD] = instruc['rd']
-        REG[instruc['rd'][:1]][instruc['rd']] = tbl_pos
+        _FUNITS_STATUS_TBL[tbl_pos][_RD] = instruc['rd']
+        _REG[instruc['rd'][:1]][instruc['rd']] = tbl_pos
 
-    instruc["status"] = ISSUED
+    instruc["status"] = _ISSUED
     instruc["unit_addr"] = tbl_pos
     return True
 
 def read(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
-    #print(funits_states[tbl_pos])
+    #print(_FUNITS_STATUS_TBL[tbl_pos])
     ri_is_av, rj_is_av = False, False
+    ri_is_av = not(_FUNITS_STATUS_TBL[tbl_pos][_Q1]) or\
+          _REG[instruc['rs1'][:1]][instruc['rs1']] != _FUNITS_STATUS_TBL[tbl_pos][_Q1]
 
-    if funits_states[tbl_pos][Q1] == None:
-        ri_is_av = True
-    else:
-        ri_is_av = REG[instruc['rs1'][:1]][instruc['rs1']] != funits_states[tbl_pos][Q1]
-
-    if funits_states[tbl_pos][Q2] == None:
-        rj_is_av = True
-    else:
-        rj_is_av = True if instruc['opcode'] == OPCODES['fld'] \
-            else True if REG[instruc['rs2'][:1]][instruc['rs2']] != funits_states[tbl_pos][Q2] else False
+    rj_is_av = not(_FUNITS_STATUS_TBL[tbl_pos][_Q2]) or\
+        instruc['opcode'] == OPCODES['fld'] or\
+          _REG[instruc['rs2'][:1]][instruc['rs2']] != _FUNITS_STATUS_TBL[tbl_pos][_Q2]
 
     #Register src 1 is not used by a unit
     if ri_is_av:
-        funits_states[tbl_pos][Q1] = None
-        funits_states[tbl_pos][R1] = False
+        _FUNITS_STATUS_TBL[tbl_pos][_Q1] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_R1] = False
  
     #Register src 2 is not used by a unit
     if rj_is_av:
-            funits_states[tbl_pos][Q2] = None
-            funits_states[tbl_pos][R2] = False
+            _FUNITS_STATUS_TBL[tbl_pos][_Q2] = None
+            _FUNITS_STATUS_TBL[tbl_pos][_R2] = False
     
     if rj_is_av and ri_is_av:
-        instruc["status"] = READ
+        instruc["status"] = _READ
         return True
 
     return False
 
 def execute(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
-    funits_states[tbl_pos][CLS] -= 1
-    instruc["status"] = EXECUTION
+    _FUNITS_STATUS_TBL[tbl_pos][_CLS] -= 1
+    instruc["status"] = _EXECUTION
 
-    if funits_states[tbl_pos][CLS] == 0:
+    if _FUNITS_STATUS_TBL[tbl_pos][_CLS] == 0:
         return True
 
     return False
 
-
 def write(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
     if not(instruc['opcode'] == OPCODES['fsd']):
-        REG[instruc['rd'][:1]][instruc['rd']] = None
+        _REG[instruc['rd'][:1]][instruc['rd']] = None
     
-    un_type = funits_states[tbl_pos][UNT_TYPE] 
-    funits_states[tbl_pos][CLS] = units[un_type]['cls']
-    funits_states[tbl_pos][Q1] = None
-    funits_states[tbl_pos][Q2] = None
-    funits_states[tbl_pos][R1] = None
-    funits_states[tbl_pos][R2] = None
-    funits_states[tbl_pos][F1] = None
-    funits_states[tbl_pos][F2] = None
-    funits_states[tbl_pos][RD] = None
-    funits_states[tbl_pos][AV] = True
-    units[un_type]['unt_avaibles'].append(tbl_pos) 
-    instruc["status"] = WRITE
+    un_type = _FUNITS_STATUS_TBL[tbl_pos][_UNT_TYPE] 
+    _FUNITS_STATUS_TBL[tbl_pos][_CLS] = _FUNIT_INF[un_type]['cls']
+    _FUNITS_STATUS_TBL[tbl_pos][_Q1] = None
+    _FUNITS_STATUS_TBL[tbl_pos][_Q2] = None
+    _FUNITS_STATUS_TBL[tbl_pos][_R1] = None
+    _FUNITS_STATUS_TBL[tbl_pos][_R2] = None
+    _FUNITS_STATUS_TBL[tbl_pos][_F1] = None
+    _FUNITS_STATUS_TBL[tbl_pos][_F2] = None
+    _FUNITS_STATUS_TBL[tbl_pos][_RD] = None
+    _FUNITS_STATUS_TBL[tbl_pos][_AV] = True
+    _FUNIT_INF[un_type]['unt_avaibles'].append(tbl_pos) 
+    instruc["status"] = _WRITE
     return True

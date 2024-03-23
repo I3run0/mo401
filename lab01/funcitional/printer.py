@@ -27,15 +27,18 @@ def update_create_a_iten(instruc, cls):
 
     if instruc["status"] in table_printer[key].keys():
         table_printer[key][instruc["status"]] = cls
-    else:
-        print(instruc["status"])
 
 def update_create_a_list(instrucs, cls):
     for instruc in instrucs:
         update_create_a_iten(instruc, cls)
 
 def print_table():
-
-    print(f'{" " * 7} ISSUE READ EXECUTE WRITE')
+    a = f'{" " * 18} ISSUE READ EXECUTE WRITE\n'
     for tkey in table_printer:
-        print(f'{tkey}: {table_printer[tkey]["ISSUE"]} {table_printer[tkey]["READ"]} {table_printer[tkey]["EXECUTE"]} {table_printer[tkey]["WRITE"]}')
+        n = len(tkey)
+        i = len(str(table_printer[tkey]["ISSUE"]))
+        r = len(str(table_printer[tkey]["READ"]))
+        e = len(str(table_printer[tkey]["EXECUTE"]))
+        a += f'{tkey}:{" " * (18 - n)}{table_printer[tkey]["ISSUE"]}{" " * (6 - i)}{table_printer[tkey]["READ"]}{" " * (5 - r)}{table_printer[tkey]["EXECUTE"]}{" " * (8 - e)}{table_printer[tkey]["WRITE"]}\n'
+
+    print(a)
