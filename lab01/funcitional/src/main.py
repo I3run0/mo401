@@ -29,8 +29,8 @@ def main():
     update_create_a_list(init_queue, 0)
 
     cls = 1
-    while cls < 40 and (init_queue != [] or processing_queue[0] != [] or\
-        processing_queue[1] != [] or processing_queue[2] != []):
+    while init_queue != [] or processing_queue[0] != [] or\
+        processing_queue[1] != [] or processing_queue[2] != []:
         instruc_to_issue = None
 
         if init_queue != [] and issue(init_queue[0]):
