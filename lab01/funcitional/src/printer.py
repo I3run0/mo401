@@ -25,7 +25,8 @@ def update_create_a_iten(instruc, cls):
         }
 
     if instruc["status"] in table_printer[key].keys():
-        table_printer[key][instruc["status"]] = cls
+        if table_printer[key][instruc["status"]] == 0:
+            table_printer[key][instruc["status"]] = cls
 
 def update_create_a_list(instrucs, cls):
     for instruc in instrucs:

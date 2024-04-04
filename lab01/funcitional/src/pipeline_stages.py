@@ -11,9 +11,9 @@ _R1 = 7
 _R2 = 8
 _CLS = 9
 
-_INT_REG = dict.fromkeys(['r' + str(i) for i in range(1, 33)])
-_FLOAT_REG = dict.fromkeys(['f' + str(i) for i in range(1, 33)])
-_X_REG = dict.fromkeys(['x' + str(i) for i in range(1, 33)])
+_INT_REG = dict.fromkeys(['r' + str(i) for i in range(0, 32)])
+_FLOAT_REG = dict.fromkeys(['f' + str(i) for i in range(0, 32)])
+_X_REG = dict.fromkeys(['x' + str(i) for i in range(0, 32)])
 _REG = {'r': _INT_REG, 'f': _FLOAT_REG, 'x':_X_REG}
 
 _ISSUED = "ISSUE"
