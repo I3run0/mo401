@@ -1,0 +1,28 @@
+# Descrição do Projeto
+
+Este projeto consiste em um conjunto de scripts em Python para realizar uma simulação do fluxo de execução do algorítimo Scoreboarding, cujo tem como objetivo executar intruções fora de ordem em pipline de execução.
+
+## Informações pessoais
+
+#### `Nome:` Bruno Sobreira França
+
+#### `RA:` 217787
+
+#### `Turma:` m0401 - 2024S1
+
+## Arquivos do Projeto
+
+- `main.py`: Provém o fluxo de execução do Scoreboarding.
+- `parser.py`: Contém funções de parser utilizadas para criar os objetos de entrada.
+- `pipeline_stages.py`: Contém as funções relacionadas aos estágios de execuçãod do pipeline.
+- `printer.py`: Contém as funções utilizadas para printar e formatar a saída.
+
+## Como executar
+
+A fim de executar a simulação é necessário prover três parametro ao programa, conforme o comando de exução a seguir, caso não seja provido o número de paramentros minímos necessários ou não seja possível interpretar os arquivos providos uma mensagem de erro é apresentada.
+
+```
+python run.py <arquivo com as unidades funcionais> <arquivo com o código RISC-v> <caminho para escrita do resultado>
+```
+
+Arquivos de testes são providos na diretório tests. Os aqruivos `*_tbl.txt` contém exemplos de saída do programa, enqunato que aqueles com apenas a extensão `.txt` são arquivos com as unidades funcionais e por fim os `.s` contém o código RISC-V.
