@@ -1,0 +1,15 @@
+                   ISSUE READ EXECUTE WRITE
+fld f1 0(x1):      1     2    3       4
+fld f2 0(x3):      2     3    4       5
+fld f3 0(x4):      5     6    7       8
+fld f4 0(x5):      6     7    8       9
+fadd f3 f2 f1:     9     10   11      13
+fsd f3 0(x4):      10    14   15      16
+fdiv f4 f2 f1:     11    12   13      29
+fsd f4 0(x5):      12    30   31      32
+fadd f1 f2 f4:     14    30   31      33
+fsd f1 0(x1):      17    34   35      36
+fmul f2 f2 f3:     18    19   20      31
+fsd f2 0(x3):      33    34   35      36
+fsub f2 f2 f3:     34    35   36      38
+fdiv f1 f1 f4:     38    39   40      56

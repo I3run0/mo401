@@ -44,7 +44,7 @@ def init_funit_status_table(funits: dict):
 def issue(instruc, clc) -> bool:
     #check reg table
     if not (instruc['opcode'] == OPCODES['fsd']) and\
-          _REG[instruc['rd'][:1]][instruc['rd']]:
+          _REG[instruc['rd'][:1]][instruc['rd']] != None:
         return False
 
     if _FUNIT_INF[instruc['unit']]['unt_avaibles'] == []:
@@ -58,13 +58,13 @@ def issue(instruc, clc) -> bool:
     _FUNITS_STATUS_TBL[tbl_pos][_F1] = instruc["rs1"]
     unit_from_reg_src = _REG[instruc['rs1'][:1]][instruc['rs1']]
     _FUNITS_STATUS_TBL[tbl_pos][_Q1] = unit_from_reg_src 
-    _FUNITS_STATUS_TBL[tbl_pos][_R1] =  False if unit_from_reg_src == None else True
+    _FUNITS_STATUS_TBL[tbl_pos][_R1] =  True if unit_from_reg_src == None else False
 
     if not(instruc['opcode'] == OPCODES['fld']):
         _FUNITS_STATUS_TBL[tbl_pos][_F2] = instruc["rs2"]
         unit_from_reg_src = _REG[instruc['rs2'][:1]][instruc['rs2']]
         _FUNITS_STATUS_TBL[tbl_pos][_Q2] = unit_from_reg_src 
-        _FUNITS_STATUS_TBL[tbl_pos][_R2] =  False if unit_from_reg_src == None else True
+        _FUNITS_STATUS_TBL[tbl_pos][_R2] =  True if unit_from_reg_src == None else False
 
     if not(instruc['opcode'] == OPCODES['fsd']):
         _FUNITS_STATUS_TBL[tbl_pos][_RD] = instruc['rd']
@@ -83,8 +83,7 @@ def read(instruc) -> bool:
     rj_is_av = _FUNITS_STATUS_TBL[tbl_pos][_Q2] == None or\
         instruc['opcode'] == OPCODES['fld'] or\
           _REG[instruc['rs2'][:1]][instruc['rs2']] != _FUNITS_STATUS_TBL[tbl_pos][_Q2]    
-    
-    #Register src 1 is not used by a unit
+
     if ri_is_av:
         _FUNITS_STATUS_TBL[tbl_pos][_Q1] = None
         _FUNITS_STATUS_TBL[tbl_pos][_R1] = False
