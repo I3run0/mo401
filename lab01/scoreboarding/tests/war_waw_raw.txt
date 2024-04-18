@@ -1,0 +1,4 @@
+int 1 1
+add 2 2
+mult 2 4
+div 1 16

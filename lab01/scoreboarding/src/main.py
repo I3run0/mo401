@@ -34,7 +34,7 @@ def main():
         processing_queue[1] != [] or processing_queue[2] != []:
         instruc_to_issue = None
 
-        if init_queue != [] and issue(init_queue[0]):
+        if init_queue != [] and issue(init_queue[0], cls):
             instruc_to_issue = init_queue.pop(0) 
 
         issue_to_move = []

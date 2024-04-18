@@ -10,6 +10,8 @@ _Q2 = 6
 _R1 = 7
 _R2 = 8
 _CLS = 9
+_INIT_CLC = 10
+_INSTUC_READ = 11
 
 _INT_REG = dict.fromkeys(['r' + str(i) for i in range(0, 32)])
 _FLOAT_REG = dict.fromkeys(['f' + str(i) for i in range(0, 32)])
@@ -31,13 +33,15 @@ def init_funit_status_table(funits: dict):
     for ukey in _FUNIT_INF:
         _FUNIT_INF[ukey]['unt_avaibles'] = []
         for j in range(_FUNIT_INF[ukey]['qtt']):
-            _FUNITS_STATUS_TBL.append([None] * 10)
+            _FUNITS_STATUS_TBL.append([None] * 12)
             _FUNITS_STATUS_TBL[tbl_ind][_UNT_TYPE] = ukey
             _FUNITS_STATUS_TBL[tbl_ind][_CLS] = _FUNIT_INF[ukey]['cls']
+            _FUNITS_STATUS_TBL[tbl_ind][_INIT_CLC] = -1
+            _FUNITS_STATUS_TBL[tbl_ind][_INSTUC_READ] = False
             _FUNIT_INF[ukey]['unt_avaibles'].append(tbl_ind)
             tbl_ind += 1
 
-def issue(instruc) -> bool:
+def issue(instruc, clc) -> bool:
     #check reg table
     if not (instruc['opcode'] == OPCODES['fsd']) and\
           _REG[instruc['rd'][:1]][instruc['rd']]:
@@ -48,19 +52,21 @@ def issue(instruc) -> bool:
 
     tbl_pos = _FUNIT_INF[instruc['unit']]['unt_avaibles'].pop(0)
     _FUNITS_STATUS_TBL[tbl_pos][_AV] = False
+    _FUNITS_STATUS_TBL[tbl_pos][_INSTUC_READ] = False
+    _FUNITS_STATUS_TBL[tbl_pos][_INIT_CLC] = clc
 
     _FUNITS_STATUS_TBL[tbl_pos][_F1] = instruc["rs1"]
     unit_from_reg_src = _REG[instruc['rs1'][:1]][instruc['rs1']]
     _FUNITS_STATUS_TBL[tbl_pos][_Q1] = unit_from_reg_src 
-    _FUNITS_STATUS_TBL[tbl_pos][_R1] =  False if unit_from_reg_src else True
+    _FUNITS_STATUS_TBL[tbl_pos][_R1] =  False if unit_from_reg_src == None else True
 
     if not(instruc['opcode'] == OPCODES['fld']):
         _FUNITS_STATUS_TBL[tbl_pos][_F2] = instruc["rs2"]
         unit_from_reg_src = _REG[instruc['rs2'][:1]][instruc['rs2']]
         _FUNITS_STATUS_TBL[tbl_pos][_Q2] = unit_from_reg_src 
-        _FUNITS_STATUS_TBL[tbl_pos][_R2] =  False if unit_from_reg_src else True
+        _FUNITS_STATUS_TBL[tbl_pos][_R2] =  False if unit_from_reg_src == None else True
 
-    if not (instruc['opcode'] == OPCODES['fsd']):
+    if not(instruc['opcode'] == OPCODES['fsd']):
         _FUNITS_STATUS_TBL[tbl_pos][_RD] = instruc['rd']
         _REG[instruc['rd'][:1]][instruc['rd']] = tbl_pos
 
@@ -71,13 +77,13 @@ def issue(instruc) -> bool:
 def read(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
     ri_is_av, rj_is_av = False, False
-    ri_is_av = not(_FUNITS_STATUS_TBL[tbl_pos][_Q1]) or\
+    ri_is_av = _FUNITS_STATUS_TBL[tbl_pos][_Q1] == None or\
           _REG[instruc['rs1'][:1]][instruc['rs1']] != _FUNITS_STATUS_TBL[tbl_pos][_Q1]
 
-    rj_is_av = not(_FUNITS_STATUS_TBL[tbl_pos][_Q2]) or\
+    rj_is_av = _FUNITS_STATUS_TBL[tbl_pos][_Q2] == None or\
         instruc['opcode'] == OPCODES['fld'] or\
-          _REG[instruc['rs2'][:1]][instruc['rs2']] != _FUNITS_STATUS_TBL[tbl_pos][_Q2]
-
+          _REG[instruc['rs2'][:1]][instruc['rs2']] != _FUNITS_STATUS_TBL[tbl_pos][_Q2]    
+    
     #Register src 1 is not used by a unit
     if ri_is_av:
         _FUNITS_STATUS_TBL[tbl_pos][_Q1] = None
@@ -87,7 +93,8 @@ def read(instruc) -> bool:
     if rj_is_av:
             _FUNITS_STATUS_TBL[tbl_pos][_Q2] = None
             _FUNITS_STATUS_TBL[tbl_pos][_R2] = False
-    
+
+
     if rj_is_av and ri_is_av:
         instruc["status"] = _READ
         return True
@@ -98,6 +105,7 @@ def execute(instruc) -> bool:
     tbl_pos = instruc["unit_addr"]
     _FUNITS_STATUS_TBL[tbl_pos][_CLS] -= 1
     instruc["status"] = _EXECUTION
+    _FUNITS_STATUS_TBL[tbl_pos][_INSTUC_READ] = True
 
     if _FUNITS_STATUS_TBL[tbl_pos][_CLS] == 0:
         return True
@@ -105,20 +113,38 @@ def execute(instruc) -> bool:
     return False
 
 def write(instruc) -> bool:
+    can_write = True
     tbl_pos = instruc["unit_addr"]
-    if not(instruc['opcode'] == OPCODES['fsd']):
-        _REG[instruc['rd'][:1]][instruc['rd']] = None
-    
-    un_type = _FUNITS_STATUS_TBL[tbl_pos][_UNT_TYPE] 
-    _FUNITS_STATUS_TBL[tbl_pos][_CLS] = _FUNIT_INF[un_type]['cls']
-    _FUNITS_STATUS_TBL[tbl_pos][_Q1] = None
-    _FUNITS_STATUS_TBL[tbl_pos][_Q2] = None
-    _FUNITS_STATUS_TBL[tbl_pos][_R1] = None
-    _FUNITS_STATUS_TBL[tbl_pos][_R2] = None
-    _FUNITS_STATUS_TBL[tbl_pos][_F1] = None
-    _FUNITS_STATUS_TBL[tbl_pos][_F2] = None
-    _FUNITS_STATUS_TBL[tbl_pos][_RD] = None
-    _FUNITS_STATUS_TBL[tbl_pos][_AV] = True
-    _FUNIT_INF[un_type]['unt_avaibles'].append(tbl_pos) 
-    instruc["status"] = _WRITE
-    return True
+
+    for i in range(len(_FUNITS_STATUS_TBL)):
+        if tbl_pos == i or\
+              _FUNITS_STATUS_TBL[tbl_pos][_INIT_CLC] < -1 or\
+              _FUNITS_STATUS_TBL[tbl_pos][_INIT_CLC] < _FUNITS_STATUS_TBL[i][_INIT_CLC]:
+            continue
+
+        if _FUNITS_STATUS_TBL[i][_AV] == False and\
+            (_FUNITS_STATUS_TBL[i][_F1] == instruc['rd'] or\
+            _FUNITS_STATUS_TBL[i][_F2] == instruc['rd']) and\
+                not(_FUNITS_STATUS_TBL[i][_INSTUC_READ]):
+            can_write = False
+
+    if can_write:
+        if not(instruc['opcode'] == OPCODES['fsd']):
+            _REG[instruc['rd'][:1]][instruc['rd']] = None
+        
+        un_type = _FUNITS_STATUS_TBL[tbl_pos][_UNT_TYPE] 
+        _FUNITS_STATUS_TBL[tbl_pos][_CLS] = _FUNIT_INF[un_type]['cls']
+        _FUNITS_STATUS_TBL[tbl_pos][_Q1] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_Q2] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_R1] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_R2] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_F1] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_F2] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_RD] = None
+        _FUNITS_STATUS_TBL[tbl_pos][_AV] = True
+        _FUNIT_INF[un_type]['unt_avaibles'].append(tbl_pos)
+        _FUNITS_STATUS_TBL[tbl_pos][_INSTUC_READ] = False
+        _FUNITS_STATUS_TBL[tbl_pos][_INIT_CLC] = -1
+        instruc["status"] = _WRITE
+
+    return can_write
